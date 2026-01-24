@@ -86,7 +86,6 @@ export default function CartPage() {
 
       await supabase.from('order_items').insert(orderItems);
 
-      // Sepeti temizle
       localStorage.removeItem('keyifli_cart');
       setCart([]);
       setCustomerName('');
@@ -103,57 +102,55 @@ export default function CartPage() {
 
   if (cart.length === 0) {
     return (
-      <div className="min-h-screen bg-white flex flex-col">
-        <header className="p-4 flex items-center gap-3">
-          <button onClick={() => router.back()} className="w-10 h-10 flex items-center justify-center hover:bg-gray-100 rounded-full">
-            <ChevronLeft size={24} />
+      <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center p-4">
+        <div className="text-center">
+          <p className="text-6xl mb-4">🛒</p>
+          <p className="text-gray-500 mb-4">Sepetiniz boş</p>
+          <button 
+            onClick={() => router.push('/menu')}
+            className="px-6 py-3 bg-blue-500 text-white rounded-xl font-semibold active:scale-95"
+          >
+            Menüye Dön
           </button>
-          <h1 className="text-lg font-bold">Sepetim</h1>
-        </header>
-        <div className="flex-1 flex items-center justify-center">
-          <div className="text-center text-gray-400">
-            <p className="text-6xl mb-4">🛒</p>
-            <p>Sepetiniz boş</p>
-            <button 
-              onClick={() => router.push('/menu')}
-              className="mt-4 px-6 py-3 bg-blue-500 text-white rounded-xl font-semibold"
-            >
-              Menüye Dön
-            </button>
-          </div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
+    <div className="min-h-screen bg-gray-50 pb-48">
       {/* Header */}
-      <header className="bg-white p-4 flex items-center gap-3">
-        <button onClick={() => router.back()} className="w-10 h-10 flex items-center justify-center hover:bg-gray-100 rounded-full">
+      <header className="bg-white sticky top-0 z-10 px-4 py-4 flex items-center gap-3 shadow-sm">
+        <button 
+          onClick={() => router.back()} 
+          className="w-10 h-10 flex items-center justify-center hover:bg-gray-100 rounded-full active:scale-90"
+        >
           <ChevronLeft size={24} />
         </button>
-        <h1 className="text-lg font-bold">Sepetim ({cart.length} ürün)</h1>
+        <h1 className="text-lg font-bold">Sepetim</h1>
       </header>
 
-      {/* Cart Items */}
-      <div className="flex-1 p-4 space-y-3">
-        {cart.map(item => (
-          <div key={item.id} className="bg-white p-4 rounded-2xl flex items-center justify-between">
-            <div className="flex-1">
-              <h4 className="font-semibold">{item.name}</h4>
-              <p className="text-sm text-gray-400">{item.price} TL x {item.qty}</p>
-            </div>
-            <div className="flex items-center gap-3">
-              <span className="font-bold text-blue-500">{item.price * item.qty} TL</span>
-              <div className="flex items-center gap-1">
+      <div className="max-w-lg mx-auto p-4 space-y-4">
+        {/* Cart Items */}
+        <div className="bg-white rounded-2xl overflow-hidden">
+          {cart.map((item, index) => (
+            <div 
+              key={item.id} 
+              className={`p-4 flex items-center gap-4 ${index !== cart.length - 1 ? 'border-b border-gray-100' : ''}`}
+            >
+              <div className="flex-1">
+                <h4 className="font-semibold text-gray-900">{item.name}</h4>
+                <p className="text-sm text-gray-400">{item.price} TL / adet</p>
+              </div>
+              
+              <div className="flex items-center gap-2">
                 <button 
                   onClick={() => removeQty(item.id)} 
                   className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center active:scale-90"
                 >
                   <Minus size={16} />
                 </button>
-                <span className="w-8 text-center font-semibold">{item.qty}</span>
+                <span className="w-8 text-center font-bold">{item.qty}</span>
                 <button 
                   onClick={() => addQty(item.id)} 
                   className="w-8 h-8 bg-blue-500 text-white rounded-full flex items-center justify-center active:scale-90"
@@ -161,49 +158,56 @@ export default function CartPage() {
                   <Plus size={16} />
                 </button>
               </div>
+
+              <div className="text-right min-w-[70px]">
+                <p className="font-bold text-blue-500">{item.price * item.qty} TL</p>
+              </div>
+
               <button 
                 onClick={() => removeItem(item.id)} 
-                className="w-8 h-8 text-red-400 hover:bg-red-50 rounded-full flex items-center justify-center"
+                className="w-8 h-8 text-red-400 hover:bg-red-50 rounded-full flex items-center justify-center active:scale-90"
               >
-                <Trash2 size={16} />
+                <Trash2 size={18} />
               </button>
             </div>
-          </div>
-        ))}
+          ))}
+        </div>
 
         {/* Customer Info */}
-        <div className="bg-white p-4 rounded-2xl space-y-3">
-          <h3 className="font-semibold">Müşteri Bilgileri</h3>
+        <div className="bg-white rounded-2xl p-4 space-y-3">
+          <h3 className="font-semibold text-gray-900">Müşteri Bilgileri</h3>
           <input
             type="text"
             value={customerName}
             onChange={e => setCustomerName(e.target.value)}
             placeholder="Adınız *"
-            className="w-full px-4 py-3 bg-gray-50 rounded-xl outline-none"
+            className="w-full px-4 py-3 bg-gray-50 rounded-xl outline-none focus:ring-2 focus:ring-blue-500"
           />
           <textarea
             value={customerNote}
             onChange={e => setCustomerNote(e.target.value)}
             placeholder="Notunuz (opsiyonel)"
             rows={2}
-            className="w-full px-4 py-3 bg-gray-50 rounded-xl outline-none resize-none"
+            className="w-full px-4 py-3 bg-gray-50 rounded-xl outline-none resize-none focus:ring-2 focus:ring-blue-500"
           />
         </div>
       </div>
 
-      {/* Footer */}
-      <div className="bg-white p-4 shadow-[0_-4px_20px_rgba(0,0,0,0.08)]">
-        <div className="flex justify-between mb-4">
-          <span className="text-gray-500">Toplam</span>
-          <span className="text-2xl font-bold">{cartTotal} TL</span>
+      {/* Fixed Footer */}
+      <div className="fixed bottom-0 left-0 right-0 bg-white p-4 shadow-[0_-4px_20px_rgba(0,0,0,0.08)]">
+        <div className="max-w-lg mx-auto">
+          <div className="flex justify-between items-center mb-4">
+            <span className="text-gray-500">Toplam</span>
+            <span className="text-2xl font-bold">{cartTotal} TL</span>
+          </div>
+          <button 
+            onClick={sendOrder} 
+            disabled={!customerName.trim() || isSubmitting}
+            className="w-full bg-blue-500 text-white py-4 rounded-2xl font-semibold active:scale-[0.98] disabled:bg-gray-300 disabled:cursor-not-allowed"
+          >
+            {isSubmitting ? 'Gönderiliyor...' : 'Siparişi Tamamla'}
+          </button>
         </div>
-        <button 
-          onClick={sendOrder} 
-          disabled={!customerName.trim() || isSubmitting}
-          className="w-full bg-blue-500 text-white py-4 rounded-2xl font-semibold active:scale-[0.98] disabled:bg-gray-300"
-        >
-          {isSubmitting ? 'Gönderiliyor...' : 'Siparişi Tamamla'}
-        </button>
       </div>
     </div>
   );
