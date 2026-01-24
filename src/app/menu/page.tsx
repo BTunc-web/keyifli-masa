@@ -22,7 +22,7 @@ interface CartItem extends Recipe {
 export default function MenuPage() {
   const [recipes, setRecipes] = useState<Recipe[]>([]);
   const [cart, setCart] = useState<CartItem[]>([]);
-const [selectedCategory, setSelectedCategory] = useState('Meze');
+  const [selectedCategory, setSelectedCategory] = useState('Mezeler');
   const [isLoaded, setIsLoaded] = useState(false);
   const [showCart, setShowCart] = useState(false);
   const [customerName, setCustomerName] = useState('');
@@ -131,75 +131,23 @@ const filteredRecipes = recipes.filter(r => r.category === selectedCategory);
     <div className="min-h-screen bg-white flex justify-center">
       <div className="w-full max-w-md">
         {/* Header */}
-        <header className="px-4 py-4 text-center border-b">
+<header className="px-4 py-4 text-center">
           <h1 className="text-lg font-bold text-gray-900">{settings.business_name}</h1>
         </header>
 
         {/* Category Tabs */}
-        {/* Menu Items */}
-<div className="px-4 pb-40">
-  <h3 className="text-base font-bold text-gray-900 mb-4">{selectedCategory}</h3>
-  <div className="space-y-3">
-    {filteredRecipes.map(recipe => {
-      const qty = getQty(recipe.id);
-      return (
-        <div 
-          key={recipe.id} 
-          className="flex gap-3 items-start p-3 rounded-2xl hover:bg-gray-50 transition-all duration-200 animate-fade-in"
-        >
-          {/* Image */}
-          <div className="w-20 h-20 rounded-xl overflow-hidden shrink-0 bg-gray-100 shadow-sm">
-            {recipe.image ? (
-              <img src={recipe.image} alt={recipe.name} className="w-full h-full object-cover" />
-            ) : (
-              <div className="w-full h-full bg-gradient-to-br from-orange-100 to-orange-200 flex items-center justify-center">
-                <span className="text-2xl">🍽️</span>
-              </div>
-            )}
-          </div>
-
-          {/* Info */}
-          <div className="flex-1 min-w-0">
-            <h4 className="font-semibold text-gray-900 text-sm">{recipe.name}</h4>
-            <div className="flex items-baseline gap-1 mt-0.5">
-              <span className="text-blue-500 font-bold text-sm">{recipe.price} TL</span>
-              <span className="text-gray-400 text-xs">/ Porsiyon</span>
-            </div>
-            <p className="text-xs text-gray-400 mt-1 line-clamp-2">{recipe.description}</p>
-          </div>
-
-          {/* Quantity Control */}
-          <div className="shrink-0">
-            {qty > 0 ? (
-              <div className="flex flex-col items-center bg-blue-50 rounded-2xl p-1 w-10 shadow-sm">
-                <button 
-                  onClick={() => addToCart(recipe)} 
-                  className="w-8 h-8 flex items-center justify-center text-blue-500 hover:bg-blue-100 rounded-full transition-all active:scale-90"
-                >
-                  <Plus size={18} strokeWidth={2.5} />
-                </button>
-                <span className="text-sm font-bold text-blue-600 py-1">{qty}</span>
-                <button 
-                  onClick={() => removeFromCart(recipe.id)} 
-                  className="w-8 h-8 flex items-center justify-center text-blue-300 hover:bg-blue-100 rounded-full transition-all active:scale-90"
-                >
-                  <Minus size={18} strokeWidth={2.5} />
-                </button>
-              </div>
-            ) : (
-              <button 
-                onClick={() => addToCart(recipe)} 
-                className="w-10 h-10 bg-blue-500 text-white rounded-full flex items-center justify-center shadow-lg shadow-blue-200 hover:bg-blue-600 transition-all active:scale-90 hover:scale-105"
-              >
-                <Plus size={20} strokeWidth={2.5} />
-              </button>
-            )}
-          </div>
+<div className="px-4 flex gap-6">
+          {categories.map(cat => (
+            <button
+              key={cat}
+              onClick={() => setSelectedCategory(cat)}
+              className={`pb-3 text-sm font-medium relative ${selectedCategory === cat ? 'text-blue-500' : 'text-gray-400'}`}
+            >
+              {cat}
+              {selectedCategory === cat && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-500 rounded-full" />}
+            </button>
+          ))}
         </div>
-      );
-    })}
-  </div>
-</div>
 
         {/* Title */}
         <div className="px-4 pt-6 pb-4">
