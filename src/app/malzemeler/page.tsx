@@ -165,6 +165,7 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-gray-50 pb-24">
 <Header title="🍳 Keyifli Masa" subtitle="Malzeme Yönetimi" onAddClick={() => setShowModal(true)} />
+    
       <main className="max-w-2xl mx-auto px-4 py-6">
         {/* Stats */}
         <div className="grid grid-cols-3 gap-3 mb-6">
