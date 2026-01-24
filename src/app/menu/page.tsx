@@ -248,42 +248,40 @@ const filteredRecipes = selectedCategory
           </div>
         )}
 
-       {/* Cart Modal */}
+    {/* Cart Modal */}
 {showCart && (
-  <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-    <div className="bg-white w-full max-w-md rounded-3xl overflow-hidden" style={{ maxHeight: '60vh' }}>
-      {/* Header */}
-      <div className="p-4 flex items-center justify-between">
-        <h3 className="text-lg font-bold">Sepetim</h3>
-        <button onClick={() => setShowCart(false)} className="w-8 h-8 flex items-center justify-center hover:bg-gray-100 rounded-full active:scale-90">
-          <span className="text-gray-400 text-xl">✕</span>
-        </button>
-      </div>
+  <div className="fixed inset-0 bg-white z-50 flex flex-col">
+    {/* Header */}
+    <div className="p-4 flex items-center justify-between shrink-0">
+      <h3 className="text-lg font-bold">Sepetim</h3>
+      <button onClick={() => setShowCart(false)} className="w-8 h-8 flex items-center justify-center hover:bg-gray-100 rounded-full active:scale-90">
+        <span className="text-gray-400 text-xl">✕</span>
+      </button>
+    </div>
 
-      {/* Items - Scrollable */}
-      <div className="overflow-y-auto px-4" style={{ maxHeight: '25vh' }}>
-        {cart.map(item => (
-          <div key={item.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-xl mb-2">
-            <div>
-              <h4 className="font-semibold text-sm">{item.name}</h4>
-              <p className="text-xs text-gray-400">{item.price} TL x {item.qty}</p>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="font-bold text-blue-500">{(item.price || 0) * item.qty} TL</span>
-              <button onClick={() => removeFromCart(item.id)} className="w-7 h-7 bg-white rounded-full flex items-center justify-center shadow active:scale-90">
-                <Minus size={14} />
-              </button>
-              <span className="w-6 text-center font-semibold text-sm">{item.qty}</span>
-              <button onClick={() => addToCart(item)} className="w-7 h-7 bg-blue-500 text-white rounded-full flex items-center justify-center active:scale-90">
-                <Plus size={14} />
-              </button>
-            </div>
+    {/* Scrollable Content */}
+    <div className="flex-1 overflow-y-auto px-4 pb-4">
+      {cart.map(item => (
+        <div key={item.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-xl mb-2">
+          <div>
+            <h4 className="font-semibold text-sm">{item.name}</h4>
+            <p className="text-xs text-gray-400">{item.price} TL x {item.qty}</p>
           </div>
-        ))}
-      </div>
+          <div className="flex items-center gap-2">
+            <span className="font-bold text-blue-500">{(item.price || 0) * item.qty} TL</span>
+            <button onClick={() => removeFromCart(item.id)} className="w-7 h-7 bg-white rounded-full flex items-center justify-center shadow active:scale-90">
+              <Minus size={14} />
+            </button>
+            <span className="w-6 text-center font-semibold text-sm">{item.qty}</span>
+            <button onClick={() => addToCart(item)} className="w-7 h-7 bg-blue-500 text-white rounded-full flex items-center justify-center active:scale-90">
+              <Plus size={14} />
+            </button>
+          </div>
+        </div>
+      ))}
 
       {/* Customer Info */}
-      <div className="px-4 py-2 space-y-2">
+      <div className="mt-4 space-y-2">
         <input
           type="text"
           value={customerName}
@@ -295,25 +293,25 @@ const filteredRecipes = selectedCategory
           value={customerNote}
           onChange={e => setCustomerNote(e.target.value)}
           placeholder="Notunuz (opsiyonel)"
-          rows={1}
-          className="w-full px-4 py-2 bg-gray-50 rounded-xl outline-none resize-none"
+          rows={2}
+          className="w-full px-4 py-3 bg-gray-50 rounded-xl outline-none resize-none"
         />
       </div>
+    </div>
 
-      {/* Footer */}
-      <div className="p-4">
-        <div className="flex justify-between mb-3">
-          <span className="text-gray-500">Toplam</span>
-          <span className="text-xl font-bold">{cartTotal} TL</span>
-        </div>
-        <button 
-          onClick={sendOrder} 
-          disabled={!customerName.trim() || isSubmitting}
-          className="w-full bg-blue-500 text-white py-4 rounded-2xl font-semibold active:scale-[0.98] disabled:bg-gray-300"
-        >
-          {isSubmitting ? 'Gönderiliyor...' : 'Siparişi Tamamla'}
-        </button>
+    {/* Fixed Footer */}
+    <div className="p-4 bg-white shadow-[0_-4px_20px_rgba(0,0,0,0.1)] shrink-0">
+      <div className="flex justify-between mb-3">
+        <span className="text-gray-500">Toplam</span>
+        <span className="text-xl font-bold">{cartTotal} TL</span>
       </div>
+      <button 
+        onClick={sendOrder} 
+        disabled={!customerName.trim() || isSubmitting}
+        className="w-full bg-blue-500 text-white py-4 rounded-2xl font-semibold active:scale-[0.98] disabled:bg-gray-300"
+      >
+        {isSubmitting ? 'Gönderiliyor...' : 'Siparişi Tamamla'}
+      </button>
     </div>
   </div>
 )}
