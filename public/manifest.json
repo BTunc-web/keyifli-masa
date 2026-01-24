@@ -1,0 +1,22 @@
+{
+  "name": "Keyifli Masa",
+  "short_name": "Keyifli Masa",
+  "description": "Ev yapımı lezzetler - Sipariş ve maliyet yönetimi",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#3b82f6",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "https://em-content.zobj.net/source/apple/391/cooking_1f373.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "https://em-content.zobj.net/source/apple/391/cooking_1f373.png", 
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

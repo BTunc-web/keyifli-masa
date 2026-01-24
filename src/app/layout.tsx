@@ -17,6 +17,8 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Keyifli Masa",
   description: "Ev yapımı lezzetler - Maliyet ve sipariş yönetimi",
+  manifest: "/manifest.json",
+  themeColor: "#3b82f6",
 };
 
 export default function RootLayout({
