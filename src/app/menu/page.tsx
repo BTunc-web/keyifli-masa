@@ -248,22 +248,22 @@ const filteredRecipes = selectedCategory
           </div>
         )}
 
-        {/* Cart Modal */}
+       {/* Cart Modal */}
 {showCart && (
-  <div className="fixed inset-0 bg-black/50 z-50 flex items-end justify-center">
-    <div className="bg-white w-full max-w-md rounded-t-3xl flex flex-col" style={{ maxHeight: '70vh' }}>
+  <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+    <div className="bg-white w-full max-w-md rounded-3xl flex flex-col max-h-[80vh]">
       {/* Header */}
-      <div className="p-4 border-b flex items-center justify-between shrink-0">
+      <div className="p-4 flex items-center justify-between shrink-0">
         <h3 className="text-lg font-bold">Sepetim</h3>
-        <button onClick={() => setShowCart(false)} className="w-8 h-8 flex items-center justify-center hover:bg-gray-100 rounded-full">
+        <button onClick={() => setShowCart(false)} className="w-8 h-8 flex items-center justify-center hover:bg-gray-100 rounded-full active:scale-90">
           <span className="text-gray-400 text-xl">✕</span>
         </button>
       </div>
 
       {/* Items - Scrollable */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-2">
+      <div className="flex-1 overflow-y-auto px-4 space-y-2">
         {cart.map(item => (
-          <div key={item.id} className="flex items-center justify-between p-2 bg-gray-50 rounded-xl">
+          <div key={item.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-xl">
             <div>
               <h4 className="font-semibold text-sm">{item.name}</h4>
               <p className="text-xs text-gray-400">{item.price} TL x {item.qty}</p>
@@ -282,7 +282,7 @@ const filteredRecipes = selectedCategory
         ))}
 
         {/* Customer Info */}
-        <div className="pt-2 space-y-2">
+        <div className="py-3 space-y-2">
           <input
             type="text"
             value={customerName}
@@ -300,8 +300,8 @@ const filteredRecipes = selectedCategory
         </div>
       </div>
 
-      {/* Footer - Fixed */}
-      <div className="p-4 bg-white border-t shrink-0">
+      {/* Footer */}
+      <div className="p-4 shrink-0">
         <div className="flex justify-between mb-3">
           <span className="text-gray-500">Toplam</span>
           <span className="text-xl font-bold">{cartTotal} TL</span>
