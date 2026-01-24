@@ -194,8 +194,8 @@ export default function CartPage() {
       </div>
 
       {/* Fixed Footer */}
-<div className="fixed bottom-20 left-0 right-0 bg-white p-4 shadow-[0_-4px_20px_rgba(0,0,0,0.08)]">
-            <div className="max-w-lg mx-auto">
+<div className="fixed bottom-0 left-0 right-0 bg-white p-4 shadow-[0_-4px_20px_rgba(0,0,0,0.08)]">
+                <div className="max-w-lg mx-auto">
           <div className="flex justify-between items-center mb-4">
             <span className="text-gray-500">Toplam</span>
             <span className="text-2xl font-bold">{cartTotal} TL</span>
