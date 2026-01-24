@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Plus, Minus, ShoppingBag } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 
 interface Recipe {
@@ -15,23 +16,28 @@ interface Recipe {
   price?: number;
 }
 
-interface CartItem extends Recipe {
+interface CartItem {
+  id: number;
+  name: string;
+  price: number;
   qty: number;
 }
 
 export default function MenuPage() {
+  const router = useRouter();
   const [recipes, setRecipes] = useState<Recipe[]>([]);
   const [cart, setCart] = useState<CartItem[]>([]);
-const [selectedCategory, setSelectedCategory] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState('');
   const [isLoaded, setIsLoaded] = useState(false);
-  const [showCart, setShowCart] = useState(false);
-  const [customerName, setCustomerName] = useState('');
-  const [customerNote, setCustomerNote] = useState('');
   const [settings, setSettings] = useState({ business_name: "Ev Yapımı Lezzetler" });
-  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     loadData();
+    // Sepeti localStorage'dan yükle
+    const savedCart = localStorage.getItem('keyifli_cart');
+    if (savedCart) {
+      setCart(JSON.parse(savedCart));
+    }
   }, []);
 
   const loadData = async () => {
@@ -54,89 +60,49 @@ const [selectedCategory, setSelectedCategory] = useState('');
         return { ...recipe, price: pricePerPortion || 50 };
       });
       setRecipes(recipesWithPrice);
-    if (recipesWithPrice.length > 0) {
-  const cats = [...new Set(recipesWithPrice.map(r => r.category))];
-  if (cats.length > 0 && !selectedCategory) {
-    setSelectedCategory(cats[0]);
-  }
-}}
-    
+      if (recipesWithPrice.length > 0) {
+        const cats = [...new Set(recipesWithPrice.map(r => r.category))];
+        if (cats.length > 0 && !selectedCategory) {
+          setSelectedCategory(cats[0]);
+        }
+      }
+    }
     setIsLoaded(true);
-    
   };
 
-const categories = [...new Set(recipes.map(r => r.category))];
+  const saveCart = (newCart: CartItem[]) => {
+    setCart(newCart);
+    localStorage.setItem('keyifli_cart', JSON.stringify(newCart));
+  };
 
-const filteredRecipes = selectedCategory 
-  ? recipes.filter(r => r.category === selectedCategory)
-  : recipes;
-  
   const addToCart = (recipe: Recipe) => {
-    setCart(prev => {
-      const existing = prev.find(item => item.id === recipe.id);
-      if (existing) {
-        return prev.map(item => item.id === recipe.id ? { ...item, qty: item.qty + 1 } : item);
-      }
-      return [...prev, { ...recipe, qty: 1 }];
-    });
+    const existing = cart.find(item => item.id === recipe.id);
+    let newCart;
+    if (existing) {
+      newCart = cart.map(item => item.id === recipe.id ? { ...item, qty: item.qty + 1 } : item);
+    } else {
+      newCart = [...cart, { id: recipe.id, name: recipe.name, price: recipe.price || 0, qty: 1 }];
+    }
+    saveCart(newCart);
   };
 
   const removeFromCart = (recipeId: number) => {
-    setCart(prev => {
-      const existing = prev.find(item => item.id === recipeId);
-      if (existing && existing.qty > 1) {
-        return prev.map(item => item.id === recipeId ? { ...item, qty: item.qty - 1 } : item);
-      }
-      return prev.filter(item => item.id !== recipeId);
-    });
+    const existing = cart.find(item => item.id === recipeId);
+    let newCart;
+    if (existing && existing.qty > 1) {
+      newCart = cart.map(item => item.id === recipeId ? { ...item, qty: item.qty - 1 } : item);
+    } else {
+      newCart = cart.filter(item => item.id !== recipeId);
+    }
+    saveCart(newCart);
   };
 
   const getQty = (recipeId: number) => cart.find(item => item.id === recipeId)?.qty || 0;
-  const cartTotal = cart.reduce((acc, item) => acc + ((item.price || 0) * item.qty), 0);
+  const cartTotal = cart.reduce((acc, item) => acc + (item.price * item.qty), 0);
   const cartCount = cart.reduce((acc, item) => acc + item.qty, 0);
 
-  const sendOrder = async () => {
-  if (cart.length === 0 || !customerName.trim() || isSubmitting) {
-    if (!customerName.trim()) alert('Lütfen adınızı girin');
-    return;
-  }
-
-  setIsSubmitting(true);
-
-  try {
-    const { data: order, error } = await supabase
-      .from('orders')
-      .insert({ customer_name: customerName.trim(), customer_note: customerNote.trim(), total: cartTotal, status: 'pending' })
-      .select()
-      .single();
-
-    if (error || !order) {
-      alert('Sipariş gönderilemedi!');
-      setIsSubmitting(false);
-      return;
-    }
-
-    const orderItems = cart.map(item => ({
-      order_id: order.id,
-      recipe_id: item.id,
-      recipe_name: item.name,
-      quantity: item.qty,
-      price: item.price || 0
-    }));
-
-    await supabase.from('order_items').insert(orderItems);
-
-    setCart([]);
-    setCustomerName('');
-    setCustomerNote('');
-    setShowCart(false);
-    alert('Siparişiniz alındı! 🎉');
-  } catch (err) {
-    alert('Bir hata oluştu!');
-  } finally {
-    setIsSubmitting(false);
-  }
-};
+  const categories = [...new Set(recipes.map(r => r.category))];
+  const filteredRecipes = selectedCategory ? recipes.filter(r => r.category === selectedCategory) : recipes;
 
   if (!isLoaded) {
     return (
@@ -150,12 +116,12 @@ const filteredRecipes = selectedCategory
     <div className="min-h-screen bg-white flex justify-center">
       <div className="w-full max-w-md">
         {/* Header */}
-<header className="px-4 py-4 text-center">
+        <header className="px-4 py-4 text-center">
           <h1 className="text-lg font-bold text-gray-900">{settings.business_name}</h1>
         </header>
 
         {/* Category Tabs */}
-<div className="px-4 flex gap-6">
+        <div className="px-4 flex gap-6">
           {categories.map(cat => (
             <button
               key={cat}
@@ -181,7 +147,7 @@ const filteredRecipes = selectedCategory
             {filteredRecipes.map(recipe => {
               const qty = getQty(recipe.id);
               return (
-                <div key={recipe.id} className="flex gap-3 items-start animate-fade-in">
+                <div key={recipe.id} className="flex gap-3 items-start">
                   {/* Image */}
                   <div className="w-20 h-20 rounded-xl overflow-hidden shrink-0 bg-gray-100">
                     {recipe.image ? (
@@ -207,16 +173,16 @@ const filteredRecipes = selectedCategory
                   <div className="shrink-0">
                     {qty > 0 ? (
                       <div className="flex flex-col items-center bg-gray-50 rounded-2xl p-1 w-10">
-                        <button onClick={() => addToCart(recipe)} className="w-8 h-8 flex items-center justify-center text-blue-500">
+                        <button onClick={() => addToCart(recipe)} className="w-8 h-8 flex items-center justify-center text-blue-500 active:scale-90">
                           <Plus size={18} strokeWidth={2.5} />
                         </button>
                         <span className="text-sm font-bold text-gray-900 py-1">{qty}</span>
-                        <button onClick={() => removeFromCart(recipe.id)} className="w-8 h-8 flex items-center justify-center text-gray-300">
+                        <button onClick={() => removeFromCart(recipe.id)} className="w-8 h-8 flex items-center justify-center text-gray-300 active:scale-90">
                           <Minus size={18} strokeWidth={2.5} />
                         </button>
                       </div>
                     ) : (
-                      <button onClick={() => addToCart(recipe)} className="w-10 h-10 bg-blue-500 text-white rounded-full flex items-center justify-center shadow-lg shadow-blue-200">
+                      <button onClick={() => addToCart(recipe)} className="w-10 h-10 bg-blue-500 text-white rounded-full flex items-center justify-center shadow-lg shadow-blue-200 active:scale-90">
                         <Plus size={20} strokeWidth={2.5} />
                       </button>
                     )}
@@ -232,89 +198,21 @@ const filteredRecipes = selectedCategory
           <div className="fixed bottom-20 left-0 right-0 p-4 z-40">
             <div className="max-w-md mx-auto">
               <button
-                onClick={() => setShowCart(true)}
-                className="w-full bg-blue-500 text-white py-4 rounded-2xl font-semibold flex items-center justify-between px-5 shadow-xl shadow-blue-200 animate-slide-up"
+                onClick={() => router.push('/cart')}
+                className="w-full bg-blue-500 text-white py-4 rounded-2xl font-semibold flex items-center justify-between px-5 shadow-xl shadow-blue-200 active:scale-[0.98]"
               >
                 <div>
                   <span className="text-sm text-blue-200">Sepetim: {cartCount} Ürün</span>
                   <div className="text-lg font-bold">{cartTotal} TL</div>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span>Siparişi Tamamla</span>
+                  <span>Sepete Git</span>
                   <ShoppingBag size={18} />
                 </div>
               </button>
             </div>
           </div>
         )}
-
-    {/* Cart Modal */}
-{showCart && (
-  <div className="fixed inset-0 bg-white z-50 flex flex-col">
-    {/* Header */}
-    <div className="p-4 flex items-center justify-between shrink-0">
-      <h3 className="text-lg font-bold">Sepetim</h3>
-      <button onClick={() => setShowCart(false)} className="w-8 h-8 flex items-center justify-center hover:bg-gray-100 rounded-full active:scale-90">
-        <span className="text-gray-400 text-xl">✕</span>
-      </button>
-    </div>
-
-    {/* Scrollable Content */}
-    <div className="flex-1 overflow-y-auto px-4 pb-4">
-      {cart.map(item => (
-        <div key={item.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-xl mb-2">
-          <div>
-            <h4 className="font-semibold text-sm">{item.name}</h4>
-            <p className="text-xs text-gray-400">{item.price} TL x {item.qty}</p>
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="font-bold text-blue-500">{(item.price || 0) * item.qty} TL</span>
-            <button onClick={() => removeFromCart(item.id)} className="w-7 h-7 bg-white rounded-full flex items-center justify-center shadow active:scale-90">
-              <Minus size={14} />
-            </button>
-            <span className="w-6 text-center font-semibold text-sm">{item.qty}</span>
-            <button onClick={() => addToCart(item)} className="w-7 h-7 bg-blue-500 text-white rounded-full flex items-center justify-center active:scale-90">
-              <Plus size={14} />
-            </button>
-          </div>
-        </div>
-      ))}
-
-      {/* Customer Info */}
-      <div className="mt-4 space-y-2">
-        <input
-          type="text"
-          value={customerName}
-          onChange={e => setCustomerName(e.target.value)}
-          placeholder="Adınız *"
-          className="w-full px-4 py-3 bg-gray-50 rounded-xl outline-none"
-        />
-        <textarea
-          value={customerNote}
-          onChange={e => setCustomerNote(e.target.value)}
-          placeholder="Notunuz (opsiyonel)"
-          rows={2}
-          className="w-full px-4 py-3 bg-gray-50 rounded-xl outline-none resize-none"
-        />
-      </div>
-    </div>
-
-    {/* Fixed Footer */}
-    <div className="p-4 bg-white shadow-[0_-4px_20px_rgba(0,0,0,0.1)] shrink-0">
-      <div className="flex justify-between mb-3">
-        <span className="text-gray-500">Toplam</span>
-        <span className="text-xl font-bold">{cartTotal} TL</span>
-      </div>
-      <button 
-        onClick={sendOrder} 
-        disabled={!customerName.trim() || isSubmitting}
-        className="w-full bg-blue-500 text-white py-4 rounded-2xl font-semibold active:scale-[0.98] disabled:bg-gray-300"
-      >
-        {isSubmitting ? 'Gönderiliyor...' : 'Siparişi Tamamla'}
-      </button>
-    </div>
-  </div>
-)}
       </div>
     </div>
   );
