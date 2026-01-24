@@ -251,9 +251,9 @@ const filteredRecipes = selectedCategory
        {/* Cart Modal */}
 {showCart && (
   <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-    <div className="bg-white w-full max-w-md rounded-3xl flex flex-col max-h-[80vh]">
+    <div className="bg-white w-full max-w-md rounded-3xl overflow-hidden" style={{ maxHeight: '60vh' }}>
       {/* Header */}
-      <div className="p-4 flex items-center justify-between shrink-0">
+      <div className="p-4 flex items-center justify-between">
         <h3 className="text-lg font-bold">Sepetim</h3>
         <button onClick={() => setShowCart(false)} className="w-8 h-8 flex items-center justify-center hover:bg-gray-100 rounded-full active:scale-90">
           <span className="text-gray-400 text-xl">✕</span>
@@ -261,9 +261,9 @@ const filteredRecipes = selectedCategory
       </div>
 
       {/* Items - Scrollable */}
-      <div className="flex-1 overflow-y-auto px-4 space-y-2">
+      <div className="overflow-y-auto px-4" style={{ maxHeight: '25vh' }}>
         {cart.map(item => (
-          <div key={item.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-xl">
+          <div key={item.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-xl mb-2">
             <div>
               <h4 className="font-semibold text-sm">{item.name}</h4>
               <p className="text-xs text-gray-400">{item.price} TL x {item.qty}</p>
@@ -280,28 +280,28 @@ const filteredRecipes = selectedCategory
             </div>
           </div>
         ))}
+      </div>
 
-        {/* Customer Info */}
-        <div className="py-3 space-y-2">
-          <input
-            type="text"
-            value={customerName}
-            onChange={e => setCustomerName(e.target.value)}
-            placeholder="Adınız *"
-            className="w-full px-4 py-3 bg-gray-50 rounded-xl outline-none"
-          />
-          <textarea
-            value={customerNote}
-            onChange={e => setCustomerNote(e.target.value)}
-            placeholder="Notunuz (opsiyonel)"
-            rows={2}
-            className="w-full px-4 py-3 bg-gray-50 rounded-xl outline-none resize-none"
-          />
-        </div>
+      {/* Customer Info */}
+      <div className="px-4 py-2 space-y-2">
+        <input
+          type="text"
+          value={customerName}
+          onChange={e => setCustomerName(e.target.value)}
+          placeholder="Adınız *"
+          className="w-full px-4 py-3 bg-gray-50 rounded-xl outline-none"
+        />
+        <textarea
+          value={customerNote}
+          onChange={e => setCustomerNote(e.target.value)}
+          placeholder="Notunuz (opsiyonel)"
+          rows={1}
+          className="w-full px-4 py-2 bg-gray-50 rounded-xl outline-none resize-none"
+        />
       </div>
 
       {/* Footer */}
-      <div className="p-4 shrink-0">
+      <div className="p-4">
         <div className="flex justify-between mb-3">
           <span className="text-gray-500">Toplam</span>
           <span className="text-xl font-bold">{cartTotal} TL</span>
