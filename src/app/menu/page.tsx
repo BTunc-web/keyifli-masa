@@ -22,7 +22,7 @@ interface CartItem extends Recipe {
 export default function MenuPage() {
   const [recipes, setRecipes] = useState<Recipe[]>([]);
   const [cart, setCart] = useState<CartItem[]>([]);
-  const [selectedCategory, setSelectedCategory] = useState('Mezeler');
+const [selectedCategory, setSelectedCategory] = useState('');
   const [isLoaded, setIsLoaded] = useState(false);
   const [showCart, setShowCart] = useState(false);
   const [customerName, setCustomerName] = useState('');
@@ -53,14 +53,23 @@ export default function MenuPage() {
         return { ...recipe, price: pricePerPortion || 50 };
       });
       setRecipes(recipesWithPrice);
-    }
+    if (recipesWithPrice.length > 0) {
+  const cats = [...new Set(recipesWithPrice.map(r => r.category))];
+  if (cats.length > 0 && !selectedCategory) {
+    setSelectedCategory(cats[0]);
+  }
+}}
+    
     setIsLoaded(true);
+    
   };
 
-const categories = ['Meze', 'Ana Yemek', 'Tatlı'];
+const categories = [...new Set(recipes.map(r => r.category))];
 
-const filteredRecipes = recipes.filter(r => r.category === selectedCategory);
-
+const filteredRecipes = selectedCategory 
+  ? recipes.filter(r => r.category === selectedCategory)
+  : recipes;
+  
   const addToCart = (recipe: Recipe) => {
     setCart(prev => {
       const existing = prev.find(item => item.id === recipe.id);
