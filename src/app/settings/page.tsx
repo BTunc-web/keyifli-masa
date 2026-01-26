@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { Save, Store, Percent, Copy, Check } from 'lucide-react';
+import { Save, Store, Percent, Phone, Copy, Check } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import Header from '@/components/Header';
 
@@ -9,7 +9,8 @@ export default function SettingsPage() {
   const [settings, setSettings] = useState({
     id: 1,
     business_name: 'Keyifli Masa',
-    default_margin: 2.5
+    default_margin: 2.5,
+    admin_phone: ''
   });
   const [saved, setSaved] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -28,7 +29,8 @@ export default function SettingsPage() {
   const handleSave = async () => {
     await supabase.from('settings').update({
       business_name: settings.business_name,
-      default_margin: settings.default_margin
+      default_margin: settings.default_margin,
+      admin_phone: settings.admin_phone
     }).eq('id', settings.id);
     
     setSaved(true);
@@ -48,10 +50,7 @@ export default function SettingsPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 pb-24">
-<Header 
-  title="⚙️ Ayarlar" 
-  subtitle="İşletme bilgileri ve tercihler"
-/>
+      <Header title="⚙️ Ayarlar" subtitle="İşletme bilgileri ve tercihler" />
 
       <main className="max-w-2xl mx-auto px-4 py-6 space-y-4">
         {/* İşletme Adı */}
@@ -72,6 +71,27 @@ export default function SettingsPage() {
             className="w-full px-4 py-3 bg-gray-50 rounded-xl outline-none focus:ring-2 focus:ring-blue-500"
             placeholder="İşletme adı"
           />
+        </div>
+
+        {/* Admin Telefon */}
+        <div className="bg-white rounded-2xl p-5 shadow-sm">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="w-10 h-10 bg-green-100 rounded-xl flex items-center justify-center">
+              <Phone size={20} className="text-green-600" />
+            </div>
+            <div>
+              <h3 className="font-semibold text-gray-900">Admin Telefon (WhatsApp)</h3>
+              <p className="text-xs text-gray-500">Sipariş bildirimleri için</p>
+            </div>
+          </div>
+          <input
+            type="tel"
+            value={settings.admin_phone}
+            onChange={e => setSettings({ ...settings, admin_phone: e.target.value })}
+            className="w-full px-4 py-3 bg-gray-50 rounded-xl outline-none focus:ring-2 focus:ring-blue-500"
+            placeholder="905551234567"
+          />
+          <p className="text-xs text-gray-400 mt-2">Başında 90 ile yazın (örn: 905551234567)</p>
         </div>
 
         {/* Varsayılan Kâr Marjı */}
@@ -127,17 +147,6 @@ export default function SettingsPage() {
               {copied ? 'Kopyalandı!' : 'Kopyala'}
             </button>
           </div>
-        </div>
-
-        {/* Bilgi */}
-        <div className="bg-blue-50 rounded-2xl p-5">
-          <h3 className="font-semibold text-blue-800 mb-2">💡 Nasıl Çalışır?</h3>
-          <ul className="text-sm text-blue-700 space-y-2">
-            <li>1. <strong>Malzemeler</strong> sayfasından market fiyatlarını girin</li>
-            <li>2. <strong>Reçeteler</strong> sayfasından yemeklerinizi oluşturun</li>
-            <li>3. <strong>Menü</strong> linkini müşterilerinize gönderin</li>
-            <li>4. <strong>Siparişler</strong> sayfasından gelen siparişleri takip edin</li>
-          </ul>
         </div>
       </main>
     </div>
