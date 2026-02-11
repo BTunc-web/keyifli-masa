@@ -13,6 +13,11 @@ interface Props {
   recipes: Recipe[];
 }
 
+function getPortionPrice(recipe: Recipe): number {
+  const portions = recipe.portions && recipe.portions > 0 ? recipe.portions : 1;
+  return Math.ceil(recipe.sale_price / portions);
+}
+
 function RecipeCard({
   recipe, cartItem, onAdd, onUpdate,
 }: {
@@ -21,6 +26,7 @@ function RecipeCard({
   onAdd: () => void;
   onUpdate: (d: number) => void;
 }) {
+  const portionPrice = getPortionPrice(recipe);
   return (
     <div className="flex items-center gap-3 p-4 bg-white rounded-2xl border-2 border-stone-100 hover:border-mango-200 transition-all">
       <div className="flex-1 min-w-0">
@@ -28,7 +34,7 @@ function RecipeCard({
         {recipe.description && (
           <p className="text-sm text-stone-400 mt-0.5 line-clamp-2">{recipe.description}</p>
         )}
-        <p className="font-bold text-mango-600 mt-1">{formatCurrency(recipe.sale_price)}</p>
+        <p className="font-bold text-mango-600 mt-1">{formatCurrency(portionPrice)}</p>
       </div>
       {cartItem ? (
         <div className="flex items-center gap-2 shrink-0">
@@ -59,7 +65,7 @@ export default function ShopClient({ profile, categories, recipes }: Props) {
   const [success, setSuccess] = useState(false);
   const supabase = createClient();
 
-  const cartTotal = cart.reduce((s, i) => s + i.recipe.sale_price * i.quantity, 0);
+  const cartTotal = cart.reduce((s, i) => s + getPortionPrice(i.recipe) * i.quantity, 0);
   const cartCount = cart.reduce((s, i) => s + i.quantity, 0);
 
   function addToCart(r: Recipe) {
@@ -106,7 +112,7 @@ export default function ShopClient({ profile, categories, recipes }: Props) {
         recipe_id: i.recipe.id,
         recipe_name: i.recipe.name,
         quantity: i.quantity,
-        price: i.recipe.sale_price,
+        price: getPortionPrice(i.recipe),
       }))
     );
 
@@ -270,7 +276,7 @@ export default function ShopClient({ profile, categories, recipes }: Props) {
                     {cart.map(i => (
                       <div key={i.recipe.id} className="flex justify-between text-base">
                         <span>{i.quantity}x {i.recipe.name}</span>
-                        <span className="font-semibold">{formatCurrency(i.recipe.sale_price * i.quantity)}</span>
+                        <span className="font-semibold">{formatCurrency(getPortionPrice(i.recipe) * i.quantity)}</span>
                       </div>
                     ))}
                     <div className="flex justify-between font-bold border-t border-stone-200 pt-3 text-lg">
@@ -296,23 +302,26 @@ export default function ShopClient({ profile, categories, recipes }: Props) {
                     </div>
                   ) : (
                     <div className="space-y-3">
-                      {cart.map(item => (
-                        <div key={item.recipe.id} className="flex items-center gap-3 p-4 bg-stone-50 rounded-2xl">
-                          <div className="flex-1 min-w-0">
-                            <p className="font-semibold text-stone-800 truncate">{item.recipe.name}</p>
-                            <p className="text-sm text-stone-400">{formatCurrency(item.recipe.sale_price)}</p>
+                      {cart.map(item => {
+                        const pp = getPortionPrice(item.recipe);
+                        return (
+                          <div key={item.recipe.id} className="flex items-center gap-3 p-4 bg-stone-50 rounded-2xl">
+                            <div className="flex-1 min-w-0">
+                              <p className="font-semibold text-stone-800 truncate">{item.recipe.name}</p>
+                              <p className="text-sm text-stone-400">{formatCurrency(pp)}</p>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <button onClick={() => updateQty(item.recipe.id, -1)} className="w-9 h-9 rounded-full bg-white border-2 border-stone-200 flex items-center justify-center font-bold">-</button>
+                              <span className="w-8 text-center font-bold">{item.quantity}</span>
+                              <button onClick={() => updateQty(item.recipe.id, 1)} className="w-9 h-9 rounded-full bg-white border-2 border-stone-200 flex items-center justify-center font-bold">+</button>
+                            </div>
+                            <div className="text-right shrink-0">
+                              <p className="font-bold">{formatCurrency(pp * item.quantity)}</p>
+                              <button onClick={() => setCart(p => p.filter(x => x.recipe.id !== item.recipe.id))} className="text-xs text-red-400 hover:text-red-600 font-semibold">Kaldır</button>
+                            </div>
                           </div>
-                          <div className="flex items-center gap-2">
-                            <button onClick={() => updateQty(item.recipe.id, -1)} className="w-9 h-9 rounded-full bg-white border-2 border-stone-200 flex items-center justify-center font-bold">-</button>
-                            <span className="w-8 text-center font-bold">{item.quantity}</span>
-                            <button onClick={() => updateQty(item.recipe.id, 1)} className="w-9 h-9 rounded-full bg-white border-2 border-stone-200 flex items-center justify-center font-bold">+</button>
-                          </div>
-                          <div className="text-right shrink-0">
-                            <p className="font-bold">{formatCurrency(item.recipe.sale_price * item.quantity)}</p>
-                            <button onClick={() => setCart(p => p.filter(x => x.recipe.id !== item.recipe.id))} className="text-xs text-red-400 hover:text-red-600 font-semibold">Kaldır</button>
-                          </div>
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   )}
                 </div>
