@@ -1,40 +1,41 @@
+import React from "react";
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Toaster } from "react-hot-toast";
 import "./globals.css";
-import Navbar from "@/components/Navbar";
-import { NotificationProvider } from "@/components/NotificationProvider";
-
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
 
 export const metadata: Metadata = {
   title: "Keyifli Masa",
-  description: "Ev yapımı lezzetler - Maliyet ve sipariş yönetimi",
-  manifest: "/manifest.json",
-  themeColor: "#3b82f6",
+  description: "Ev yapımı lezzetler, online sipariş",
 };
 
-export default function RootLayout({
-  children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="tr">
-      <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
-        <NotificationProvider>
-          <div className="pb-20">
-            {children}
-          </div>
-          <Navbar />
-        </NotificationProvider>
+      <head>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;500;600;700&display=swap" rel="stylesheet" />
+      </head>
+      <body>
+        {children}
+        <Toaster
+          position="top-center"
+          toastOptions={{
+            duration: 3000,
+            style: {
+              fontSize: "16px",
+              borderRadius: "16px",
+              padding: "12px 20px",
+              fontFamily: "Quicksand, sans-serif",
+            },
+            success: {
+              style: { background: "#e8f5e9", color: "#2e7d32" },
+            },
+            error: {
+              style: { background: "#ffebee", color: "#c62828" },
+            },
+          }}
+        />
       </body>
     </html>
   );

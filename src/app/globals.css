@@ -1,114 +1,91 @@
 @import "tailwindcss";
 
-/* Smooth animations */
-@keyframes slideUp {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+@theme {
+  --color-mango-50: #fff3e0;
+  --color-mango-100: #ffe0b2;
+  --color-mango-200: #ffcc80;
+  --color-mango-300: #ffab60;
+  --color-mango-400: #ff8a50;
+  --color-mango-500: #FF7043;
+  --color-mango-600: #f4511e;
+  --color-mango-700: #e64a19;
+  --color-mango-800: #d84315;
+  --color-mango-900: #bf360c;
+
+  --color-sunshine-50: #fffde7;
+  --color-sunshine-100: #fff9c4;
+  --color-sunshine-200: #fff59d;
+  --color-sunshine-300: #fff176;
+  --color-sunshine-400: #ffee58;
+  --color-sunshine-500: #FFCA28;
+  --color-sunshine-600: #ffc107;
+  --color-sunshine-700: #ffb300;
+  --color-sunshine-800: #ffa000;
+  --color-sunshine-900: #ff8f00;
+
+  --color-mint-50: #e8f5e9;
+  --color-mint-100: #c8e6c9;
+  --color-mint-200: #a5d6a7;
+  --color-mint-300: #81c784;
+  --color-mint-400: #66BB6A;
+  --color-mint-500: #4caf50;
+  --color-mint-600: #43a047;
+  --color-mint-700: #388e3c;
+  --color-mint-800: #2e7d32;
+  --color-mint-900: #1b5e20;
+
+  --color-cream: #FFFCF5;
+
+  --font-display: "Quicksand", sans-serif;
+  --font-body: "Quicksand", sans-serif;
 }
 
-@keyframes slideDown {
-  from {
-    opacity: 0;
-    transform: translateY(-10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+@utility btn-primary {
+  @apply px-6 py-3 bg-mango-500 text-white rounded-2xl font-semibold text-base hover:bg-mango-600 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-md hover:shadow-lg;
 }
 
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
+@utility btn-secondary {
+  @apply px-6 py-3 bg-white border-2 border-mango-200 text-mango-700 rounded-2xl font-semibold text-base hover:bg-mango-50 transition-all;
 }
 
-@keyframes pulse-ring {
-  0% {
-    transform: scale(0.8);
-    opacity: 1;
-  }
-  100% {
-    transform: scale(1.5);
-    opacity: 0;
-  }
+@utility btn-ghost {
+  @apply px-5 py-3 text-stone-600 rounded-2xl font-semibold text-base hover:bg-stone-100 transition-all;
 }
 
-@keyframes bounce-in {
-  0% {
-    transform: scale(0.3);
-    opacity: 0;
-  }
-  50% {
-    transform: scale(1.05);
-  }
-  70% {
-    transform: scale(0.9);
-  }
-  100% {
-    transform: scale(1);
-    opacity: 1;
-  }
+@utility btn-danger {
+  @apply px-6 py-3 bg-red-500 text-white rounded-2xl font-semibold text-base hover:bg-red-600 transition-all;
 }
 
-.animate-slide-up {
-  animation: slideUp 0.3s ease-out;
+@utility btn-mint {
+  @apply px-6 py-3 bg-mint-400 text-white rounded-2xl font-semibold text-base hover:bg-mint-500 transition-all shadow-md;
 }
 
-.animate-slide-down {
-  animation: slideDown 0.2s ease-out;
+@utility input-field {
+  @apply w-full px-4 py-3 border-2 border-stone-200 rounded-2xl text-base focus:outline-none focus:ring-2 focus:ring-mango-300 focus:border-mango-400 transition-all;
 }
 
-.animate-fade-in {
-  animation: fadeIn 0.2s ease-out;
+@utility card {
+  @apply bg-white rounded-3xl border border-stone-100 shadow-sm p-6;
 }
 
-.animate-bounce-in {
-  animation: bounce-in 0.4s ease-out;
+@utility sidebar-link {
+  @apply flex items-center gap-3 px-4 py-3 rounded-2xl text-base font-semibold transition-all;
 }
 
-.animate-pulse-ring {
-  animation: pulse-ring 1.5s cubic-bezier(0.215, 0.61, 0.355, 1) infinite;
+@utility badge {
+  @apply inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold border;
 }
 
-/* Custom scrollbar */
-.no-scrollbar::-webkit-scrollbar {
-  display: none;
+@utility table-header {
+  @apply text-left text-xs font-bold text-stone-500 uppercase tracking-wide px-6 py-3;
 }
 
-.no-scrollbar {
-  -ms-overflow-style: none;
-  scrollbar-width: none;
+@utility table-cell {
+  @apply px-6 py-4 text-base;
 }
 
-/* Card hover effect */
-.card-hover {
-  transition: all 0.2s ease;
-}
-
-.card-hover:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 25px -5px rgba(0, 0, 0, 0.1);
-}
-
-/* Gradient backgrounds */
-.gradient-primary {
-  background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
-}
-
-.gradient-success {
-  background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
-}
-
-.gradient-warning {
-  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+body {
+  font-family: "Quicksand", sans-serif;
+  background-color: #FFFCF5;
+  @apply text-stone-800 antialiased;
 }
