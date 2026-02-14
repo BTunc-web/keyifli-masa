@@ -18,6 +18,20 @@ function getPortionPrice(recipe: Recipe): number {
   return Math.ceil(recipe.sale_price / portions);
 }
 
+function getMinDate(): string {
+  const now = new Date();
+  return now.toISOString().split("T")[0];
+}
+
+function getTimeSlots(): string[] {
+  const slots: string[] = [];
+  for (let h = 9; h <= 21; h++) {
+    slots.push(`${String(h).padStart(2, "0")}:00`);
+    if (h < 21) slots.push(`${String(h).padStart(2, "0")}:30`);
+  }
+  return slots;
+}
+
 function RecipeCard({
   recipe, cartItem, onAdd, onUpdate,
 }: {
@@ -29,6 +43,19 @@ function RecipeCard({
   const portionPrice = getPortionPrice(recipe);
   return (
     <div className="flex items-center gap-3 p-4 bg-white rounded-2xl border-2 border-stone-100 hover:border-mango-200 transition-all">
+      {/* Ürün Fotoğrafı */}
+      {recipe.image_url ? (
+        <img
+          src={recipe.image_url}
+          alt={recipe.name}
+          className="w-16 h-16 sm:w-20 sm:h-20 rounded-xl object-cover shrink-0 border border-stone-100"
+        />
+      ) : (
+        <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-xl bg-stone-100 flex items-center justify-center shrink-0">
+          <span className="text-2xl sm:text-3xl">🍽️</span>
+        </div>
+      )}
+
       <div className="flex-1 min-w-0">
         <p className="font-semibold text-stone-800">{recipe.name}</p>
         {recipe.description && (
@@ -38,16 +65,16 @@ function RecipeCard({
       </div>
       {cartItem ? (
         <div className="flex items-center gap-2 shrink-0">
-          <button onClick={() => onUpdate(-1)} className="w-10 h-10 rounded-full bg-stone-100 flex items-center justify-center text-lg font-bold hover:bg-stone-200">
+          <button onClick={() => onUpdate(-1)} className="w-10 h-10 rounded-full bg-stone-100 flex items-center justify-center text-lg font-bold hover:bg-stone-200 active:scale-90 transition-all">
             -
           </button>
           <span className="w-8 text-center text-lg font-bold">{cartItem.quantity}</span>
-          <button onClick={() => onUpdate(1)} className="w-10 h-10 rounded-full bg-mango-500 text-white flex items-center justify-center text-lg font-bold hover:bg-mango-600">
+          <button onClick={() => onUpdate(1)} className="w-10 h-10 rounded-full bg-mango-500 text-white flex items-center justify-center text-lg font-bold hover:bg-mango-600 active:scale-90 transition-all">
             +
           </button>
         </div>
       ) : (
-        <button onClick={onAdd} className="shrink-0 w-11 h-11 rounded-full bg-mango-500 text-white flex items-center justify-center text-2xl hover:bg-mango-600 shadow-md">
+        <button onClick={onAdd} className="shrink-0 w-11 h-11 rounded-full bg-mango-500 text-white flex items-center justify-center text-2xl hover:bg-mango-600 shadow-md active:scale-90 transition-all">
           +
         </button>
       )}
@@ -60,7 +87,14 @@ export default function ShopClient({ profile, categories, recipes }: Props) {
   const [showCart, setShowCart] = useState(false);
   const [showCheckout, setShowCheckout] = useState(false);
   const [activeCat, setActiveCat] = useState<number | null>(null);
-  const [form, setForm] = useState({ name: "", phone: "", address: "", note: "" });
+  const [form, setForm] = useState({
+    name: "",
+    phone: "",
+    address: "",
+    note: "",
+    delivery_date: "",
+    delivery_time: "",
+  });
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
   const supabase = createClient();
@@ -87,6 +121,7 @@ export default function ShopClient({ profile, categories, recipes }: Props) {
     e.preventDefault();
     if (!cart.length) return toast.error("Sepet boş");
     if (!form.name.trim() || !form.phone.trim()) return toast.error("Ad ve telefon gerekli");
+    if (!form.delivery_date || !form.delivery_time) return toast.error("Teslimat tarih ve saati seçiniz");
     setSubmitting(true);
 
     const { data: order, error } = await supabase.from("orders").insert({
@@ -96,6 +131,8 @@ export default function ShopClient({ profile, categories, recipes }: Props) {
       customer_phone: form.phone.trim(),
       customer_address: form.address.trim() || null,
       customer_note: form.note.trim() || null,
+      delivery_date: form.delivery_date,
+      delivery_time: form.delivery_time,
       total: cartTotal,
       status: "pending",
     }).select().single();
@@ -127,6 +164,8 @@ export default function ShopClient({ profile, categories, recipes }: Props) {
     .filter(g => g.items.length > 0);
   const uncat = filtered.filter(r => !r.category_id);
 
+  const timeSlots = getTimeSlots();
+
   if (success) {
     return (
       <div className="min-h-screen bg-cream flex items-center justify-center p-6">
@@ -135,9 +174,14 @@ export default function ShopClient({ profile, categories, recipes }: Props) {
             <span className="text-5xl">✅</span>
           </div>
           <h2 className="text-2xl font-display font-bold text-stone-900 mb-3">Siparişiniz Alındı! 🎉</h2>
-          <p className="text-base text-stone-500 mb-8">{profile.shop_name} siparişinizi hazırlamaya başlayacak.</p>
+          <p className="text-base text-stone-500 mb-2">{profile.shop_name} siparişinizi hazırlamaya başlayacak.</p>
+          {form.delivery_date && form.delivery_time && (
+            <p className="text-sm text-mango-600 font-semibold mb-8">
+              📅 Teslimat: {new Date(form.delivery_date + "T00:00:00").toLocaleDateString("tr-TR", { day: "numeric", month: "long", year: "numeric", weekday: "long" })} saat {form.delivery_time}
+            </p>
+          )}
           <button
-            onClick={() => { setSuccess(false); setShowCheckout(false); setShowCart(false); setForm({ name: "", phone: "", address: "", note: "" }); }}
+            onClick={() => { setSuccess(false); setShowCheckout(false); setShowCart(false); setForm({ name: "", phone: "", address: "", note: "", delivery_date: "", delivery_time: "" }); }}
             className="btn-primary text-lg px-8 py-4"
           >
             Yeni Sipariş Ver 🛒
@@ -154,7 +198,7 @@ export default function ShopClient({ profile, categories, recipes }: Props) {
           <h1 className="text-xl font-display font-bold text-stone-800 truncate">🍽️ {profile.shop_name}</h1>
           <button
             onClick={() => setShowCart(true)}
-            className="relative flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-mango-500 text-white font-semibold hover:bg-mango-600 shadow-md"
+            className="relative flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-mango-500 text-white font-semibold hover:bg-mango-600 shadow-md active:scale-95 transition-all"
           >
             🛒 {formatCurrency(cartTotal)}
             {cartCount > 0 && (
@@ -181,7 +225,7 @@ export default function ShopClient({ profile, categories, recipes }: Props) {
             <div className="flex gap-2 overflow-x-auto py-3">
               <button
                 onClick={() => setActiveCat(null)}
-                className={"shrink-0 px-5 py-2.5 rounded-2xl font-semibold " + (activeCat === null ? "bg-mango-500 text-white shadow-md" : "bg-stone-100 text-stone-600")}
+                className={"shrink-0 px-5 py-2.5 rounded-2xl font-semibold transition-all active:scale-95 " + (activeCat === null ? "bg-mango-500 text-white shadow-md" : "bg-stone-100 text-stone-600")}
               >
                 Tümü
               </button>
@@ -189,7 +233,7 @@ export default function ShopClient({ profile, categories, recipes }: Props) {
                 <button
                   key={c.id}
                   onClick={() => setActiveCat(c.id)}
-                  className={"shrink-0 px-5 py-2.5 rounded-2xl font-semibold " + (activeCat === c.id ? "bg-mango-500 text-white shadow-md" : "bg-stone-100 text-stone-600")}
+                  className={"shrink-0 px-5 py-2.5 rounded-2xl font-semibold transition-all active:scale-95 " + (activeCat === c.id ? "bg-mango-500 text-white shadow-md" : "bg-stone-100 text-stone-600")}
                 >
                   {c.name}
                 </button>
@@ -235,7 +279,7 @@ export default function ShopClient({ profile, categories, recipes }: Props) {
         <div className="fixed bottom-4 left-4 right-4 z-30 sm:hidden">
           <button
             onClick={() => setShowCart(true)}
-            className="w-full flex items-center justify-between px-6 py-4 bg-mango-500 text-white rounded-2xl shadow-lg font-bold text-lg"
+            className="w-full flex items-center justify-between px-6 py-4 bg-mango-500 text-white rounded-2xl shadow-lg font-bold text-lg active:scale-[0.98] transition-all"
           >
             <span className="flex items-center gap-2">🛒 {cartCount} ürün</span>
             <span>{formatCurrency(cartTotal)}</span>
@@ -249,7 +293,7 @@ export default function ShopClient({ profile, categories, recipes }: Props) {
           <div className="fixed right-0 top-0 bottom-0 w-full max-w-md bg-white shadow-xl flex flex-col">
             <div className="flex items-center justify-between px-6 py-5 border-b border-stone-100">
               <h3 className="text-xl font-display font-bold">Sepetiniz 🛒</h3>
-              <button onClick={() => setShowCart(false)} className="p-2 rounded-2xl hover:bg-stone-100 text-xl">✕</button>
+              <button onClick={() => setShowCart(false)} className="p-2 rounded-2xl hover:bg-stone-100 text-xl active:scale-90 transition-all">✕</button>
             </div>
 
             {showCheckout ? (
@@ -267,10 +311,41 @@ export default function ShopClient({ profile, categories, recipes }: Props) {
                     <label className="block text-base font-semibold text-stone-700 mb-2">📍 Adres</label>
                     <textarea value={form.address} onChange={e => setForm({...form, address: e.target.value})} className="input-field resize-none" rows={2} />
                   </div>
+
+                  {/* ===== TESLİMAT TARİH & SAAT ===== */}
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-base font-semibold text-stone-700 mb-2">📅 Teslimat Tarihi *</label>
+                      <input
+                        type="date"
+                        value={form.delivery_date}
+                        onChange={e => setForm({...form, delivery_date: e.target.value})}
+                        min={getMinDate()}
+                        className="input-field"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-base font-semibold text-stone-700 mb-2">🕐 Teslimat Saati *</label>
+                      <select
+                        value={form.delivery_time}
+                        onChange={e => setForm({...form, delivery_time: e.target.value})}
+                        className="input-field"
+                        required
+                      >
+                        <option value="">Saat Seçin</option>
+                        {timeSlots.map(t => (
+                          <option key={t} value={t}>{t}</option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+
                   <div>
                     <label className="block text-base font-semibold text-stone-700 mb-2">📝 Not</label>
-                    <textarea value={form.note} onChange={e => setForm({...form, note: e.target.value})} className="input-field resize-none" rows={2} />
+                    <textarea value={form.note} onChange={e => setForm({...form, note: e.target.value})} className="input-field resize-none" rows={2} placeholder="Alerji, diyet, özel istek..." />
                   </div>
+
                   <div className="bg-stone-50 rounded-2xl p-5 space-y-2">
                     <p className="text-sm font-bold text-stone-500 uppercase">Sipariş Özeti</p>
                     {cart.map(i => (
@@ -283,10 +358,15 @@ export default function ShopClient({ profile, categories, recipes }: Props) {
                       <span>Toplam</span>
                       <span className="text-mango-600">{formatCurrency(cartTotal)}</span>
                     </div>
+                    {form.delivery_date && form.delivery_time && (
+                      <p className="text-sm text-mango-600 font-medium pt-1">
+                        📅 {new Date(form.delivery_date + "T00:00:00").toLocaleDateString("tr-TR", { day: "numeric", month: "long", weekday: "short" })} — {form.delivery_time}
+                      </p>
+                    )}
                   </div>
                   <div className="flex gap-3">
-                    <button type="button" onClick={() => setShowCheckout(false)} className="btn-secondary flex-1 py-4">Geri</button>
-                    <button type="submit" disabled={submitting} className="btn-primary flex-1 py-4">
+                    <button type="button" onClick={() => setShowCheckout(false)} className="btn-secondary flex-1 py-4 active:scale-95 transition-all">Geri</button>
+                    <button type="submit" disabled={submitting} className="btn-primary flex-1 py-4 active:scale-95 transition-all">
                       {submitting ? "Gönderiliyor... ⏳" : "Sipariş Ver 🎉"}
                     </button>
                   </div>
@@ -306,14 +386,22 @@ export default function ShopClient({ profile, categories, recipes }: Props) {
                         const pp = getPortionPrice(item.recipe);
                         return (
                           <div key={item.recipe.id} className="flex items-center gap-3 p-4 bg-stone-50 rounded-2xl">
+                            {/* Sepette de fotoğraf göster */}
+                            {item.recipe.image_url ? (
+                              <img src={item.recipe.image_url} alt={item.recipe.name} className="w-12 h-12 rounded-xl object-cover shrink-0" />
+                            ) : (
+                              <div className="w-12 h-12 rounded-xl bg-stone-200 flex items-center justify-center shrink-0">
+                                <span className="text-lg">🍽️</span>
+                              </div>
+                            )}
                             <div className="flex-1 min-w-0">
                               <p className="font-semibold text-stone-800 truncate">{item.recipe.name}</p>
                               <p className="text-sm text-stone-400">{formatCurrency(pp)}</p>
                             </div>
                             <div className="flex items-center gap-2">
-                              <button onClick={() => updateQty(item.recipe.id, -1)} className="w-9 h-9 rounded-full bg-white border-2 border-stone-200 flex items-center justify-center font-bold">-</button>
+                              <button onClick={() => updateQty(item.recipe.id, -1)} className="w-9 h-9 rounded-full bg-white border-2 border-stone-200 flex items-center justify-center font-bold active:scale-90 transition-all">-</button>
                               <span className="w-8 text-center font-bold">{item.quantity}</span>
-                              <button onClick={() => updateQty(item.recipe.id, 1)} className="w-9 h-9 rounded-full bg-white border-2 border-stone-200 flex items-center justify-center font-bold">+</button>
+                              <button onClick={() => updateQty(item.recipe.id, 1)} className="w-9 h-9 rounded-full bg-white border-2 border-stone-200 flex items-center justify-center font-bold active:scale-90 transition-all">+</button>
                             </div>
                             <div className="text-right shrink-0">
                               <p className="font-bold">{formatCurrency(pp * item.quantity)}</p>
@@ -331,7 +419,7 @@ export default function ShopClient({ profile, categories, recipes }: Props) {
                       <span className="text-stone-600 font-semibold text-lg">Toplam</span>
                       <span className="text-2xl font-bold text-mango-600">{formatCurrency(cartTotal)}</span>
                     </div>
-                    <button onClick={() => setShowCheckout(true)} className="btn-primary w-full py-4 text-lg">Sipariş Ver 🎉</button>
+                    <button onClick={() => setShowCheckout(true)} className="btn-primary w-full py-4 text-lg active:scale-[0.98] transition-all">Sipariş Ver 🎉</button>
                   </div>
                 )}
               </>

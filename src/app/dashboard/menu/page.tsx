@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { createClient } from "@/lib/supabase";
 import { formatCurrency } from "@/lib/utils";
 import type { Category } from "@/lib/types";
@@ -32,6 +32,7 @@ interface Recipe {
   sale_price: number;
   is_active: boolean;
   profile_id: string;
+  image_url: string | null;
 }
 
 export default function MenuPage() {
@@ -55,6 +56,12 @@ export default function MenuPage() {
     portions: "4", margin: "2.5", is_active: true,
   });
   const [recipeIngs, setRecipeIngs] = useState<{ ingredientId: number; amount: string }[]>([]);
+
+  // Fotoğraf state'leri
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [uploadingImage, setUploadingImage] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [showCatModal, setShowCatModal] = useState(false);
   const [editingCat, setEditingCat] = useState<Category | null>(null);
@@ -100,6 +107,75 @@ export default function MenuPage() {
   function getPortionPrice(recipe: Recipe): number {
     const total = getRecipeSalePrice(recipe);
     return recipe.portions > 0 ? Math.ceil(total / recipe.portions) : total;
+  }
+
+  // ==================== IMAGE UPLOAD ====================
+  function handleImageSelect(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Max 5MB kontrol
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("Fotoğraf en fazla 5MB olabilir");
+      return;
+    }
+
+    // Sadece resim dosyaları
+    if (!file.type.startsWith("image/")) {
+      toast.error("Sadece resim dosyası yükleyebilirsiniz");
+      return;
+    }
+
+    setImageFile(file);
+    const reader = new FileReader();
+    reader.onloadend = () => setImagePreview(reader.result as string);
+    reader.readAsDataURL(file);
+  }
+
+  async function uploadImage(recipeId: number): Promise<string | null> {
+    if (!imageFile) return null;
+
+    setUploadingImage(true);
+    const ext = imageFile.name.split(".").pop() || "jpg";
+    const fileName = `${userId}/${recipeId}-${Date.now()}.${ext}`;
+
+    const { error } = await supabase.storage
+      .from("recipe-images")
+      .upload(fileName, imageFile, { upsert: true });
+
+    setUploadingImage(false);
+
+    if (error) {
+      console.error("Upload error:", error);
+      toast.error("Fotoğraf yüklenemedi");
+      return null;
+    }
+
+    const { data: urlData } = supabase.storage
+      .from("recipe-images")
+      .getPublicUrl(fileName);
+
+    return urlData.publicUrl;
+  }
+
+  async function removeImage(recipe: Recipe) {
+    if (!recipe.image_url) return;
+    
+    // URL'den dosya yolunu çıkar
+    const parts = recipe.image_url.split("/recipe-images/");
+    if (parts[1]) {
+      await supabase.storage.from("recipe-images").remove([parts[1]]);
+    }
+    
+    await supabase.from("recipes").update({ image_url: null }).eq("id", recipe.id);
+    toast.success("Fotoğraf kaldırıldı");
+    load();
+  }
+
+  function clearImageSelection() {
+    setImageFile(null);
+    setImagePreview(null);
+    if (fileInputRef.current) fileInputRef.current.value = "";
   }
 
   // ==================== INGREDIENT CRUD ====================
@@ -168,6 +244,9 @@ export default function MenuPage() {
 
   // ==================== RECIPE CRUD ====================
   function openRecipe(r?: Recipe) {
+    // Fotoğraf state'lerini temizle
+    clearImageSelection();
+
     if (r) {
       setEditingRecipe(r);
       setRecipeForm({
@@ -179,6 +258,8 @@ export default function MenuPage() {
         margin: String(r.margin || 2.5),
         is_active: r.is_active,
       });
+      // Mevcut fotoğrafı preview'da göster
+      if (r.image_url) setImagePreview(r.image_url);
       const ri = recipeIngredients.filter(x => x.recipe_id === r.id);
       setRecipeIngs(ri.map(x => ({ ingredientId: x.ingredient_id, amount: String(x.amount) })));
     } else {
@@ -213,7 +294,7 @@ export default function MenuPage() {
     const salePrice = Math.ceil(cost * margin);
     const catObj = categories.find(c => c.id === parseInt(recipeForm.category_id));
 
-    const payload = {
+    const payload: Record<string, unknown> = {
       profile_id: userId,
       name: recipeForm.name.trim(),
       description: recipeForm.description.trim() || null,
@@ -229,12 +310,24 @@ export default function MenuPage() {
     if (editingRecipe) {
       await supabase.from("recipes").update(payload).eq("id", editingRecipe.id);
       recipeId = editingRecipe.id;
-      // Eski recipe_ingredients sil
       await supabase.from("recipe_ingredients").delete().eq("recipe_id", recipeId);
     } else {
       const { data } = await supabase.from("recipes").insert(payload).select().single();
       if (!data) return toast.error("Kayıt başarısız");
       recipeId = data.id;
+    }
+
+    // Fotoğraf yükle (yeni dosya seçildiyse)
+    if (imageFile) {
+      const imageUrl = await uploadImage(recipeId);
+      if (imageUrl) {
+        // Eski fotoğrafı sil
+        if (editingRecipe?.image_url) {
+          const parts = editingRecipe.image_url.split("/recipe-images/");
+          if (parts[1]) await supabase.storage.from("recipe-images").remove([parts[1]]);
+        }
+        await supabase.from("recipes").update({ image_url: imageUrl }).eq("id", recipeId);
+      }
     }
 
     // Yeni recipe_ingredients ekle
@@ -251,11 +344,17 @@ export default function MenuPage() {
 
     toast.success(editingRecipe ? "Güncellendi ✅" : "Reçete eklendi 🍲");
     setShowRecipeModal(false);
+    clearImageSelection();
     load();
   }
 
   async function delRecipe(r: Recipe) {
     if (!confirm(r.name + " silinsin mi?")) return;
+    // Fotoğrafı da sil
+    if (r.image_url) {
+      const parts = r.image_url.split("/recipe-images/");
+      if (parts[1]) await supabase.storage.from("recipe-images").remove([parts[1]]);
+    }
     await supabase.from("recipe_ingredients").delete().eq("recipe_id", r.id);
     await supabase.from("recipes").delete().eq("id", r.id);
     toast.success("Silindi");
@@ -328,7 +427,22 @@ export default function MenuPage() {
                     key={r.id}
                     className={"rounded-3xl bg-white border-2 p-5 transition-all " + (r.is_active ? "border-stone-100" : "border-stone-200 opacity-60")}
                   >
-                    <div className="flex items-start justify-between gap-3">
+                    <div className="flex items-start gap-4">
+                      {/* Fotoğraf Thumbnail */}
+                      <div className="shrink-0">
+                        {r.image_url ? (
+                          <img
+                            src={r.image_url}
+                            alt={r.name}
+                            className="w-20 h-20 rounded-2xl object-cover border-2 border-stone-100"
+                          />
+                        ) : (
+                          <div className="w-20 h-20 rounded-2xl bg-stone-100 flex items-center justify-center">
+                            <span className="text-3xl">🍽️</span>
+                          </div>
+                        )}
+                      </div>
+
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-2 flex-wrap">
                           <p className="font-bold text-stone-800 text-lg">{r.name}</p>
@@ -342,6 +456,7 @@ export default function MenuPage() {
                           <span className="text-stone-500">×{r.margin} marj</span>
                         </div>
                       </div>
+
                       <div className="text-right shrink-0">
                         <div className="grid grid-cols-3 gap-3 text-center mb-2">
                           <div className="bg-red-50 px-3 py-2 rounded-xl">
@@ -493,6 +608,64 @@ export default function MenuPage() {
             <h3 className="text-xl font-display font-bold mb-5">{editingRecipe ? "Reçete Düzenle ✏️" : "Yeni Reçete 🍳"}</h3>
 
             <div className="space-y-4">
+              {/* ===== FOTOĞRAF ALANI ===== */}
+              <div>
+                <label className="block text-base font-semibold text-stone-700 mb-2">📷 Fotoğraf</label>
+                <div className="flex items-center gap-4">
+                  {imagePreview ? (
+                    <div className="relative">
+                      <img
+                        src={imagePreview}
+                        alt="Önizleme"
+                        className="w-24 h-24 rounded-2xl object-cover border-2 border-stone-200"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => {
+                          clearImageSelection();
+                          // Eğer düzenleme modundaysa ve mevcut fotoğraf varsa, sil flag'i koy
+                          if (editingRecipe?.image_url && !imageFile) {
+                            removeImage(editingRecipe);
+                            setShowRecipeModal(false);
+                          }
+                        }}
+                        className="absolute -top-2 -right-2 w-7 h-7 bg-red-500 text-white rounded-full flex items-center justify-center text-sm font-bold shadow-md hover:bg-red-600"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => fileInputRef.current?.click()}
+                      className="w-24 h-24 rounded-2xl border-2 border-dashed border-stone-300 flex flex-col items-center justify-center hover:border-mango-400 hover:bg-mango-50/30 transition-all cursor-pointer"
+                    >
+                      <span className="text-2xl">📷</span>
+                      <span className="text-xs text-stone-400 mt-1">Ekle</span>
+                    </button>
+                  )}
+                  <div className="flex-1">
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept="image/*"
+                      onChange={handleImageSelect}
+                      className="hidden"
+                    />
+                    {imagePreview && (
+                      <button
+                        type="button"
+                        onClick={() => fileInputRef.current?.click()}
+                        className="text-sm text-mango-500 font-semibold hover:underline"
+                      >
+                        Değiştir
+                      </button>
+                    )}
+                    <p className="text-xs text-stone-400 mt-1">Max 5MB, JPG/PNG</p>
+                  </div>
+                </div>
+              </div>
+
               <div>
                 <label className="block text-base font-semibold text-stone-700 mb-2">🍽️ Reçete Adı *</label>
                 <input type="text" value={recipeForm.name} onChange={e => setRecipeForm({...recipeForm, name: e.target.value})} className="input-field" placeholder="Karnıyarık" autoFocus />
@@ -603,7 +776,9 @@ export default function MenuPage() {
 
             <div className="flex justify-end gap-2 mt-6">
               <button onClick={() => setShowRecipeModal(false)} className="btn-secondary">İptal</button>
-              <button onClick={saveRecipe} className="btn-primary">{editingRecipe ? "Güncelle ✅" : "Ekle 🎉"}</button>
+              <button onClick={saveRecipe} disabled={uploadingImage} className="btn-primary">
+                {uploadingImage ? "Yükleniyor... ⏳" : editingRecipe ? "Güncelle ✅" : "Ekle 🎉"}
+              </button>
             </div>
           </div>
         </div>

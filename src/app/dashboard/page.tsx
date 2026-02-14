@@ -46,6 +46,13 @@ export default function DashboardPage() {
     setLoading(false);
   }
 
+  function formatDelivery(order: Order): string | null {
+    if (!order.delivery_date) return null;
+    const d = new Date(order.delivery_date + "T00:00:00");
+    const dateStr = d.toLocaleDateString("tr-TR", { day: "numeric", month: "short" });
+    return order.delivery_time ? `${dateStr} ${order.delivery_time}` : dateStr;
+  }
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-20">
@@ -94,12 +101,13 @@ export default function DashboardPage() {
           </div>
         ) : (
           <div className="overflow-x-auto -mx-6">
-            <table className="w-full min-w-[600px]">
+            <table className="w-full min-w-[700px]">
               <thead>
                 <tr className="border-b border-stone-100">
                   <th className="table-header">#</th>
                   <th className="table-header">Müşteri</th>
                   <th className="table-header">Tutar</th>
+                  <th className="table-header">Teslimat</th>
                   <th className="table-header">Durum</th>
                   <th className="table-header">Tarih</th>
                 </tr>
@@ -107,6 +115,7 @@ export default function DashboardPage() {
               <tbody>
                 {recentOrders.map((order) => {
                   const status = ORDER_STATUS_MAP[order.status] || ORDER_STATUS_MAP.pending;
+                  const delivery = formatDelivery(order);
                   return (
                     <tr key={order.id} className="border-b border-stone-50 hover:bg-stone-50/50">
                       <td className="table-cell font-medium">{order.order_number || "#" + order.id}</td>
@@ -115,6 +124,13 @@ export default function DashboardPage() {
                         {order.customer_phone && <p className="text-xs text-stone-400">{order.customer_phone}</p>}
                       </td>
                       <td className="table-cell font-semibold">{formatCurrency(order.total)}</td>
+                      <td className="table-cell">
+                        {delivery ? (
+                          <span className="text-sm text-mango-600 font-medium">📅 {delivery}</span>
+                        ) : (
+                          <span className="text-xs text-stone-300">—</span>
+                        )}
+                      </td>
                       <td className="table-cell">
                         <span className={"badge " + status.bg + " " + status.color}>{status.label}</span>
                       </td>

@@ -31,6 +31,7 @@ export interface Recipe {
   portions: number | null;
   margin: number | null;
   image: string | null;
+  image_url: string | null;
   sale_price: number;
   is_active: boolean;
   created_at: string;
@@ -53,6 +54,8 @@ export interface Order {
   customer_phone: string | null;
   customer_address: string | null;
   customer_note: string | null;
+  delivery_date: string | null;
+  delivery_time: string | null;
   total: number;
   status: OrderStatus;
   created_at: string;
